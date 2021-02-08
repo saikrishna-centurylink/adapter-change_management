@@ -18,5 +18,12 @@
   "homepage": "https://github.com/saikrishna-centurylink/adapter-change_management#readme",
   "dependencies": {
     "request": "^2.88.2"
-  }
+  },
+  "keywords": [
+    "An",
+    "IAP",
+    "change",
+    "management",
+    "adapter"
+  ]
 }
