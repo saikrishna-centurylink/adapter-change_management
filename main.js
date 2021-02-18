@@ -83,57 +83,57 @@ class ServiceNowAdapter extends EventEmitter {
     this.healthcheck();
   }
 
- /**
- * @memberof ServiceNowAdapter
- * @method healthcheck
- * @summary Check ServiceNow Health
- * @description Verifies external system is available and healthy.
- *   Calls method emitOnline if external system is available.
- *
- * @param {ServiceNowAdapter~requestCallback} [callback] - The optional callback
- *   that handles the response.
- */
-healthcheck(callback) {
- this.getRecord((result, error) => {
-   /**
-    * For this lab, complete the if else conditional
-    * statements that check if an error exists
-    * or the instance was hibernating. You must write
-    * the blocks for each branch.
+    /**
+    * @memberof ServiceNowAdapter
+    * @method healthcheck
+    * @summary Check ServiceNow Health
+    * @description Verifies external system is available and healthy.
+    *   Calls method emitOnline if external system is available.
+    *
+    * @param {ServiceNowAdapter~requestCallback} [callback] - The optional callback
+    *   that handles the response.
     */
-   if (error) {
-     /**
-      * Write this block.
-      * If an error was returned, we need to emit OFFLINE.
-      * Log the returned error using IAP's global log object
-      * at an error severity. In the log message, record
-      * this.id so an administrator will know which ServiceNow
-      * adapter instance wrote the log message in case more
-      * than one instance is configured.
-      * If an optional IAP callback function was passed to
-      * healthcheck(), execute it passing the error seen as an argument
-      * for the callback's errorMessage parameter.
-      */
-      this.emitStatus('OFFLINE');
-      log.error(`ServiceNow: Instance is unavailable.`);
-     callback(null, error);
-   } else {
-     /**
-      * Write this block.
-      * If no runtime problems were detected, emit ONLINE.
-      * Log an appropriate message using IAP's global log object
-      * at a debug severity.
-      * If an optional IAP callback function was passed to
-      * healthcheck(), execute it passing this function's result
-      * parameter as an argument for the callback function's
-      * responseData parameter.
-      */
-      this.emitStatus('ONLINE');
-      log.info('ServiceNow: Instance is available latest.');
-      callback(result, null);
-   }
- });
-}
+    healthcheck(callback) {
+    this.getRecord((result, error) => {
+    /**
+        * For this lab, complete the if else conditional
+        * statements that check if an error exists
+        * or the instance was hibernating. You must write
+        * the blocks for each branch.
+        */
+    if (error) {
+        /**
+        * Write this block.
+        * If an error was returned, we need to emit OFFLINE.
+        * Log the returned error using IAP's global log object
+        * at an error severity. In the log message, record
+        * this.id so an administrator will know which ServiceNow
+        * adapter instance wrote the log message in case more
+        * than one instance is configured.
+        * If an optional IAP callback function was passed to
+        * healthcheck(), execute it passing the error seen as an argument
+        * for the callback's errorMessage parameter.
+        */
+        this.emitOffline();
+        log.error("Error from " + this.id)
+        // callback(null, error);
+    } else {
+        /**
+        * Write this block.
+        * If no runtime problems were detected, emit ONLINE.
+        * Log an appropriate message using IAP's global log object
+        * at a debug severity.
+        * If an optional IAP callback function was passed to
+        * healthcheck(), execute it passing this function's result
+        * parameter as an argument for the callback function's
+        * responseData parameter.
+        */
+        this.emitOnline();
+        log.debug("Online");
+        // callback(result, null);
+    }
+    });
+    }
 
   /**
    * @memberof ServiceNowAdapter
@@ -188,11 +188,33 @@ healthcheck(callback) {
      * Note how the object was instantiated in the constructor().
      * get() takes a callback function.
      */
-     this.connector.get((data, error) => {
+
+      this.connector.get((data, error) => {
             if (error) {
-                console.error(`\nError returned from GET request:\n${JSON.stringify(error)}`);
+                // console.error(`\nError returned from GET request:\n${JSON.stringify(error)}`);
+                callback(null, error);
+            } else {
+                console.log(`\nResponse returned from GET request:\n${JSON.stringify(data)}`)
+                if (typeof data == 'object' && 'body' in data) {
+                    const body = JSON.parse(data.body);
+                    const array = body.result
+                    let returnData = []
+                    array.forEach(element => {
+                        const { number: change_ticket_number, active, priority, description, work_start, work_end, sys_id: change_ticket_key } = element
+                        const obj = {
+                        change_ticket_number,
+                        active,
+                        priority,
+                        description,
+                        work_start,
+                        work_end, 
+                        change_ticket_key
+                        }
+                        returnData.push(obj)
+                    });
+                    callback(returnData, null)
+                }
             }
-            console.log(`\nResponse returned from GET request:\n${JSON.stringify(data)}`)
         });
   }
 
@@ -212,11 +234,29 @@ healthcheck(callback) {
      * Note how the object was instantiated in the constructor().
      * post() takes a callback function.
      */
-     this.connector.post((data, error) => {
+
+      this.connector.post((data, error) => {
             if (error) {
-                console.error(`\nError returned from POST request:\n${JSON.stringify(error)}`);
+                // console.error(`\nError returned from POST request:\n${JSON.stringify(error)}`);
+                 callback(data, error);
+            } else {
+                console.log(`\nResponse returned from POST request:\n${JSON.stringify(data)}`)
+                if (typeof data == 'object' && 'body' in data) {
+                    const body = JSON.parse(data.body);
+                    const result = body.result;
+                    const { number: change_ticket_number, active, priority, description, work_start, work_end, sys_id: change_ticket_key } = result;
+                    const obj = {
+                    change_ticket_number,
+                    active,
+                    priority,
+                    description,
+                    work_start,
+                    work_end, 
+                    change_ticket_key
+                    };
+                    callback(obj, error);
+                }
             }
-            console.log(`\nResponse returned from POST request:\n${JSON.stringify(data)}`)
         });
   }
 }
